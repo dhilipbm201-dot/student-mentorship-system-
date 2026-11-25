@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Admin overview{% endblock %}
+{% block content %}
+<div class="page-head"><div><span class="eyebrow">SYSTEM MANAGEMENT</span><h1>Admin overview</h1><p class="muted">Monitor accounts, mentorship requests and video sessions.</p></div></div>
+<div class="section-head"><h2>Registered users</h2></div>
+<div class="table-wrap"><table>
+<tr><th>Name</th><th>Email</th><th>Role</th><th>Department</th><th>Verification</th><th>Manage</th></tr>
+{% for u in users %}<tr><td>{{ u.name }}</td><td>{{ u.email }}</td><td>{{ u.role | capitalize }}</td><td>{{ u.department or '-' }}</td><td>
+{% if u.role == 'mentor' %}{% if u.verified %}<span class="status accepted">Verified</span>{% else %}<form method="post" action="{{ url_for('verify_mentor', user_id=u.id) }}"><input type="hidden" name="csrf" value="{{ session.csrf }}"><button class="tiny" type="submit">Approve Mentor</button></form>{% endif %}{% else %}-{% endif %}</td><td>
+{% if u.id != session.get('user_id') %}<form method="post" action="{{ url_for('delete_user', user_id=u.id) }}"><input type="hidden" name="csrf" value="{{ session.csrf }}"><button class="tiny danger-btn" type="submit">Delete</button></form>{% else %}Current account{% endif %}</td></tr>
+{% else %}<tr><td colspan="6">No registered users.</td></tr>{% endfor %}</table></div>
+<div class="section-head"><h2>All mentorship requests</h2></div>
+<div class="table-wrap"><table><tr><th>Student</th><th>Mentor</th><th>Status</th><th>Date</th></tr>
+{% for r in requests %}<tr><td>{{ r.student_name }}</td><td>{{ r.mentor_name }}</td><td><span class="status {{ r.status }}">{{ r.status | capitalize }}</span></td><td>{{ r.created_at }} {% if r.status == "accepted" %}<a href="{{ url_for('chat', req_id=r.id) }}">Review messages</a>{% endif %}</td></tr>{% else %}<tr><td colspan="4">No requests yet.</td></tr>{% endfor %}</table></div>
+<div class="section-head"><h2>Video session requests</h2></div>
+<div class="table-wrap"><table><tr><th>Request ID</th><th>Meeting topic</th><th>Meeting date</th><th>Status</th><th>Faculty review</th></tr>
+{% for v in video_requests %}<tr><td>#{{ v.id }}</td><td>{{ v.topic }}</td><td>{{ v.meeting_date }}</td><td><span class="status {{ 'accepted' if v.status == 'approved' else v.status }}">{{ v.status | capitalize }}</span></td><td>
+{% if v.status == 'pending' %}<form method="post" action="{{ url_for('review_video', request_id=v.id) }}"><input type="hidden" name="csrf" value="{{ session.csrf }}"><input type="hidden" name="review_token" value="{{ session.review_token }}"><button class="tiny" type="submit" name="decision" value="approved">Approve</button> <button class="tiny danger-btn" type="submit" name="decision" value="rejected">Reject</button></form><small>Authorized faculty review only</small>{% else %}Review completed{% endif %}</td></tr>
+{% else %}<tr><td colspan="5">No video session requests yet.</td></tr>{% endfor %}</table></div>
+<div class="form-card" style="margin-top:25px"><h2>Video session information</h2><p class="muted">Approved sessions are arranged through institution-managed conferencing. Local demonstration only.</p></div>
+{% endblock %}
